@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>管理页面首页</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        .size{
+            width: 49%;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+<div class="jumbotron size">
+  <h1>添加新的书籍</h1>
+  <p></p>
+  <p><a class="btn btn-primary btn-lg" href={{url_for("admin.add_book")}} role="button">增加书籍</a></p>
+</div>
+
+<div class="jumbotron size">
+  <h1>管理用户发来的借书请求</h1>
+  <p>用户的借书请求需要管理员同意</p>
+  <p><a class="btn btn-primary btn-lg" href={{url_for("admin.get_admin_pending_order_page")}} role="button">管理借阅订单</a></p>
+</div>
+
+
+<div class="jumbotron size">
+  <h1>删除已经没用的书籍</h1>
+  <p></p>
+  <p><a class="btn btn-primary btn-lg" href={{url_for("admin.del_book")}} role="button">删除书籍</a></p>
+</div>
+
+
+<div class="jumbotron size">
+  <h1>用户申请归还书籍</h1>
+  <p>请在收到用户归还的书后 在这里确认用户已经返还</p>
+  <p><a class="btn btn-primary btn-lg"  href={{url_for("admin.get_return_book_page")}} role="button">管理返回书籍</a></p>
+</div>
+
+<div class="jumbotron size">
+  <h1>添加或删除类型</h1>
+  <p>爬取输入关键字在京东第一页的信息 并作为一种新的类型解析入库</p>
+  <p><a class="btn btn-primary btn-lg"  href={{url_for("admin.add_type_page")}} role="button">管理书籍类型</a></p>
+</div>
+
+
+</body>
+</html>

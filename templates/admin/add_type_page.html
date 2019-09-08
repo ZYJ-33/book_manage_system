@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>增加类型</title>
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+<body>
+
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href={{url_for("index.index")}}>借阅系统</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li><a href={{url_for("admin.add_book")}} role="button">增加书籍</a></li>
+        <li><a href={{url_for("admin.get_admin_pending_order_page")}} role="button">管理订单</a></li>
+        <li><a  href={{url_for("admin.get_return_book_page")}} role="button">管理返回书籍</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href={{url_for("admin.add_type_page")}} role="button">管理书籍类型</a></li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+<div style="margin: 0 30%">
+    <p>输入关键字后 爬虫会自动爬取京东页面的信息并将其入库</p>
+    <input id="id-input-keyword" placeholder="输入关键字">
+    <button id="id-but-sub">提交关键字</button>
+    <div>
+        <p>删除类型（相关数据一起删除）</p>
+        <select id="id-select-type" style="right: 100%;">
+
+         </select>
+        <button id="id-but-delete">删除选中类型</button>
+    </div>
+</div>
+
+<script>
+        var ajax = function(method, path, data, reseponseCallback) {
+            var r = new XMLHttpRequest()
+            // 设置请求方法和请求地址
+            r.open(method, path, true)
+            // 设置发送的数据的格式为 application/json
+            // 这个不是必须的
+            r.setRequestHeader('Content-Type', 'application/json')
+            // 注册响应函数
+            r.onreadystatechange = function() {
+                if(r.readyState === 4) {
+                    // r.response 存的就是服务器发过来的放在 HTTP BODY 中的数据
+                    reseponseCallback(r.response)
+                }
+            }
+            // 把数据转换为 json 格式字符串
+            data = JSON.stringify(data)
+            // 发送请求
+            r.send(data)
+        }
+        var log = function() {
+            console.log.apply(console, arguments)
+        }
+        var get = function (str) {
+            return document.querySelector(str)
+        }
+        var get_all = function (str) {
+            return document.querySelectorAll(str)
+        }
+        var jump_url_call_back = function (url) {
+            window.location.href = url
+        }
+
+
+
+        var bind_event = function () {
+            var sub_but = get("#id-but-sub")
+            var del_but = get("#id-but-delete")
+            sub_but.addEventListener("click", function (event) {
+                var kw = get("#id-input-keyword").value
+                ajax("POST", '{{url_for("admin.add_type")}}', {type:kw}, jump_url_call_back)
+            })
+            del_but.addEventListener("click", function (event) {
+                var select = get("#id-select-type")
+                var option = select.options[select.selectedIndex]
+                ajax("POST", "{{url_for('admin.del_type')}}", {id:option.dataset.id}, jump_url_call_back)
+            })
+
+        }
+
+        var put_all_book_type = function (resp) {
+            resp = JSON.parse(resp)
+            var select = get("#id-select-type")
+            for(var i=0; i<resp.length;i++){
+                var tmp = option_template(resp[i]["id"], resp[i]["type"])
+                select.insertAdjacentHTML("beforeEnd", tmp)
+            }
+        }
+
+        var get_book_types = function () {
+             ajax("GET", "{{url_for('book.get_all_book_type')}}", null, put_all_book_type)
+        }
+
+
+        var option_template = function (id, type) {
+            var tmp = `<option value = ${type} data-id=${id}>${type}</option>`
+            return tmp
+        }
+
+</script>
+<script>
+    get_book_types()
+    bind_event()
+
+</script>
+</body>
+</html>

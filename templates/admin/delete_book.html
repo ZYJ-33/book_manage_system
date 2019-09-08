@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>删除书籍</title>
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href={{url_for("index.index")}}>借阅系统</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li><a href={{url_for("admin.add_book")}} role="button">增加书籍</a></li>
+        <li><a href={{url_for("admin.get_admin_pending_order_page")}} role="button">管理订单</a></li>
+        <li><a  href={{url_for("admin.get_return_book_page")}} role="button">管理返回书籍</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href={{url_for("admin.add_type_page")}} role="button">管理书籍类型</a></li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+    <div class="container">
+        <table class="table table-bordered table-hover table-condensed" id="id-table-result">
+        <thead class="thead-light" id="id-table-head">
+        <tr>
+          <th>书名</th>
+          <th>剩余</th>
+          <th>删除</th>
+        </tr>
+      </thead>
+        <tbody id="id-table-body">
+
+      </tbody>
+    </table>
+    </div>
+    <script>
+        var ajax = function(method, path, data, reseponseCallback) {
+            var r = new XMLHttpRequest()
+            // 设置请求方法和请求地址
+            r.open(method, path, true)
+            // 设置发送的数据的格式为 application/json
+            // 这个不是必须的
+            r.setRequestHeader('Content-Type', 'application/json')
+            // 注册响应函数
+            r.onreadystatechange = function() {
+                if(r.readyState === 4) {
+                    // r.response 存的就是服务器发过来的放在 HTTP BODY 中的数据
+                    reseponseCallback(r.response)
+                }
+            }
+            // 把数据转换为 json 格式字符串
+            data = JSON.stringify(data)
+            // 发送请求
+            r.send(data)
+        }
+        var log = function() {
+            console.log.apply(console, arguments)
+        }
+        var get = function (str) {
+            return document.querySelector(str)
+        }
+        
+        var tbody_template = function (bookname, remain, id) {
+            var tmp = `
+                    <tr id=target-${id}>
+                      <td>${bookname}</td>
+                      <td>${remain}</td>
+                      <td>
+                            <button type="button" class="btn delete_but btn-danger" data-id=${id}>删除</button>
+                      </td>
+                    </tr>
+            `
+            return tmp
+        }
+
+    var put_all_book = function (resp) {
+        log(resp)
+        resp = JSON.parse(resp)
+        var table_body = get("#id-table-body")
+        for(var i=0; i<resp.length;i++){
+            var target = resp[i]
+            var tmp = tbody_template(target["bookname"], target["remain"],  target["id"])
+            table_body.insertAdjacentHTML("beforeEnd", tmp)
+        }
+    }
+
+    var delete_book = function (event) {
+        var target = event.target
+        if (target.classList.contains("delete_but")){
+            var id = target.dataset.id
+            var to_delete = get("#target-"+id)
+            ajax("POST", "{{url_for('admin.del_book')}}", id, function (resp) {
+                if (resp == "ok"){
+                    to_delete.remove()
+            }
+            })
+        }
+    }
+
+    var bind_event = function() {
+        var table_body = get("#id-table-body")
+        table_body.addEventListener("click", delete_book)
+    }
+
+    </script>
+    <script>
+        bind_event()
+        ajax("GET", "{{url_for('book.get_all_book')}}", null, put_all_book)
+    </script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>添加书籍</title>
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        #introduce{
+            height: 200px;
+        }
+        .container{
+            margin: 0 auto;
+            width: 80%;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href={{url_for("index.index")}}>借阅系统</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li><a href={{url_for("admin.add_book")}} role="button">增加书籍</a></li>
+        <li><a href={{url_for("admin.get_admin_pending_order_page")}} role="button">管理订单</a></li>
+        <li><a  href={{url_for("admin.get_return_book_page")}} role="button">管理返回书籍</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href={{url_for("admin.add_type_page")}} role="button">管理书籍类型</a></li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+    <div class="container">
+    <h1 class="h3 mb-3 font-weight-normal">增加书籍</h1>
+        <label for="bookname" class="sr-only">书名</label>
+        <input type="text" id="bookname" class="form-control" placeholder="书名" required autofocus>
+        <label for="total" class="sr-only">共有多少本?</label>
+        <input type="number" id="total" class="form-control" placeholder="共有多少本?" required autofocus>
+        <label for="publisher" class="sr-only">出版商</label>
+        <input type="text" id="publisher" class="form-control" placeholder="出版商" required autofocus>
+        <label for="ISBN" class="sr-only">ISBN</label>
+        <input type="text" id="ISBN" class="form-control" placeholder="ISBN" required autofocus>
+        <label for="public_time" class="sr-only">出版时间</label>
+        <input type="date" id="public_time" class="form-control" placeholder="出版时间" required autofocus>
+        <label for="author" class="sr-only">作者</label>
+        <input type="text" id="author" class="form-control" placeholder="作者" required autofocus>
+        <label for="version" class="sr-only">第几版？</label>
+        <input type="number" id="version" class="form-control" placeholder="第几版?" required autofocus>
+        <select id="id-select-type">
+
+         </select>
+        <label for="introduce" class="sr-only">简介</label>
+        <textarea id="introduce" class="form-control" placeholder="简介" required autofocus></textarea>
+        <button id="id-but-submit">提交</button>
+    </div>
+    <script>
+        var ajax = function(method, path, data, reseponseCallback) {
+            var r = new XMLHttpRequest()
+            // 设置请求方法和请求地址
+            r.open(method, path, true)
+            // 设置发送的数据的格式为 application/json
+            // 这个不是必须的
+            r.setRequestHeader('Content-Type', 'application/json')
+            // 注册响应函数
+            r.onreadystatechange = function() {
+                if(r.readyState === 4) {
+                    // r.response 存的就是服务器发过来的放在 HTTP BODY 中的数据
+                    reseponseCallback(r.response)
+                }
+            }
+            // 把数据转换为 json 格式字符串
+            data = JSON.stringify(data)
+            // 发送请求
+            r.send(data)
+        }
+        var log = function() {
+            console.log.apply(console, arguments)
+        }
+        var get = function (str) {
+            return document.querySelector(str)
+        }
+        var sending_callback = function (resp) {
+            if (resp == "ok"){
+                get("#bookname").value = ""
+                get("#total").value = ""
+                get("#introduce").value = ""
+            }
+        }
+
+
+        var sending = function () {
+            var bookname = get("#bookname").value
+            var total = get("#total").value
+            var version = get("#version").value
+            var introduce = get("#introduce").value
+            var publisher = get("#publisher").value
+            var ISBN = get("#ISBN").value
+            var public_time = get("#public_time").value
+            var author = get("#author")
+            var select = get("#id-select-type")
+            var id = select.options[select.selectedIndex].dataset.id
+            if (bookname.length>0 && introduce.length>0 && total != null && publisher.length>0 && ISBN.length >0 && author.length>0 && id != null){
+                var data = [publisher, ISBN, version, public_time, author,bookname, introduce, id]
+                ajax("post", `{{url_for("admin.add_book")}}`, data, sending_callback)
+            }
+        }
+
+        var binding_event = function () {
+            var send_but = get("#id-but-submit")
+            send_but.addEventListener("click", sending)
+        }
+
+         var put_all_book_type = function (resp){
+             resp = JSON.parse(resp)
+             var select = get("#id-select-type")
+             for (var i = 0; i < resp.length; i++) {
+                 var tmp = option_template(resp[i]["id"], resp[i]["type"])
+                 select.insertAdjacentHTML("beforeEnd", tmp)
+             }
+         }
+
+        var get_book_types = function () {
+            ajax("GET", "{{url_for('book.get_all_book_type')}}", null, put_all_book_type)
+        }
+
+        var option_template = function (id, type) {
+            var tmp = `<option value = ${type} data-id=${id}>${type}</option>`
+            return tmp
+        }
+
+    </script>
+    <script>
+        get_book_types()
+        binding_event()
+    </script>
+</body>
+
+</html>

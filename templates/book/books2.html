@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>所有书籍</title>
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .not_show{
+            display: none;
+        }
+        .center{
+            margin: 16px auto;
+            padding: 25px;
+            border-radius: 16px;
+            background: white;
+            transition: 0.5s;
+            position: relative;
+        }
+        .center:hover{
+            box-shadow: 0px 0px 7px #888888;
+        }
+        .title{
+            margin: 0;
+            color: rgba(85,85,85,.7);
+        }
+        .title:hover{
+            color: #1BC3FB;
+        }
+        .title-container{
+            text-align: left;
+            margin: 0;
+        }
+        .meta-item{
+            color: rgba(85,85,85,.7);
+            font-size: 14px;
+            display: inline-block;
+            cursor: pointer;
+            transition: 0.5s;
+        }
+        .meta-item:hover{
+            color: #1BC3FB;
+        }
+        .meta-item + .meta-item{
+                padding-left: 5px;
+        }
+        .meta-box{
+            padding: 0 0;
+        }
+        a{
+            color: rgba(85,85,85,.7);
+        }
+
+        .articles{
+            margin: 0 12.5%;
+            position: relative;
+            right: 13%;
+        }
+        .opening{
+            color: #555;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+        .button-box{
+            background-color: #1BC3FB;
+            border-color: #1BC3FB;
+            color: white;
+            width: 100px;
+            height: 35px;
+            display: inline-block;
+            text-align: center;
+            margin: 20px 0px;
+            font-size: 12.8px;
+            text-decoration-line: none;
+            line-height: 30px;
+            border-radius: 10px;
+            opacity: 0.7;
+            transition: 0.5s;
+        }
+        .button-box:hover{
+            opacity: 1;
+        }
+        .tags{
+                background-color: lightgray;
+                font-size: 20px;
+                position: absolute;
+                left: 0;
+                bottom: 0;
+                height: 5%;
+                width: 100%;
+                border-bottom-right-radius: 12px;
+                border-bottom-left-radius: 12px;
+                opacity: 0.7;
+        }
+
+        .meta-item>a:hover {
+            color: #1BC3FB;
+        }
+        .search_container{
+            position: fixed;
+            top: 100px;
+            width: 250px;
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+<div style="background-color: lightgray; width: 100%; height: 100%; position: fixed; top: 0px; left: 0px; opacity: 0.4;z-index: -999"></div>
+  <nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href={{url_for("index.index")}}>图书管理系统</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+          <li><a href={{url_for("admin.add_book")}} role="button"></a></li>
+          <li><a href={{url_for("order.get_pending_order_record_page")}} role="button">查看申请中的记录</a></li>
+          <li><a  href={{url_for("order.get_begin_order_record_page")}} role="button">查看已经开始的记录</a></li>
+          <li><a  href={{url_for("order.get_end_order_record_page")}} role="button">查看已经完成的记录</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href={{url_for("book.get_books_template")}} role="button">查看所有书籍</a></li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+ <div class="input-group search_container">
+     <div style="margin-bottom: 20px; transform: translateX(20)">
+         <select id="id-select-type" style="right: 100%;">
+
+         </select>
+     </div>
+     <div>
+         <input id="bookname" type="text" class="form-control searcher" placeholder="输入寻找的书名" aria-describedby="basic-addon1"><br>
+     </div>
+     <div>
+         <input id="author" type="text" class="form-control searcher" placeholder="输入作者" aria-describedby="basic-addon1"><br>
+     </div>
+     <div>
+         <input id="ISBN" type="text" class="form-control searcher" placeholder="输入ISBN" aria-describedby="basic-addon1"><br>
+     </div>
+ </div>
+<div class="articles">
+
+</div>
+
+<script>
+    var ajax = function(method, path, data, reseponseCallback) {
+            var r = new XMLHttpRequest()
+            // 设置请求方法和请求地址
+            r.open(method, path, true)
+            // 设置发送的数据的格式为 application/json
+            // 这个不是必须的
+            r.setRequestHeader('Content-Type', 'application/json')
+            // 注册响应函数
+            r.onreadystatechange = function() {
+                if(r.readyState === 4) {
+                    // r.response 存的就是服务器发过来的放在 HTTP BODY 中的数据
+                    reseponseCallback(r.response)
+                }
+            }
+            // 把数据转换为 json 格式字符串
+            data = JSON.stringify(data)
+            // 发送请求
+            r.send(data)
+        }
+        var log = function() {
+            console.log.apply(console, arguments)
+        }
+        var get = function (str) {
+            return document.querySelector(str)
+        }
+        var get_all = function (str) {
+            return document.querySelectorAll(str)
+        }
+
+    var get_template = function (bookname, introduce, id, remain, ISBN, author, publisher, public_time) {
+        if (remain>0)
+        {
+            var tmp = `
+                <article class="center " data-bookname='${bookname}' data-ISBN='${ISBN}' data-author='${author}'>
+                    <section class="meta">
+                        <div class="title-container">
+                            <h2 class="title">${bookname}</h2>
+                        </div>
+                        <div class="meta-box">
+                        <div class="meta-item"><a href="#">作者:${author}</a></div>
+                        <div class="meta-item"><a href="#">出版商:${publisher}</a></div>
+                        <div class="meta-item"><a href="#">出版时间:${public_time}</a></div>
+                        <div class="meta-item"><a href="#">剩余${remain}本</a></div>
+                        <hr>
+                        </div>
+                    </section>
+                    <section class="arti-body">
+                        <span class="opening">
+                            ${introduce}
+                        </span>
+                        <div class="readmore">
+                            <button class="button-box borrow" data-id=${id}>申请借阅</button>
+                        </div>
+                    </section>
+                    <section class="tags">
+                    </section>
+                </article>
+            `
+        }
+        else{
+            var tmp =
+                `
+                <article class="center " data-bookname='${bookname}' data-ISBN='${ISBN}' data-author='${author}'>
+                    <section class="meta">
+                        <div class="title-container">
+                            <h2 class="title">${bookname}</h2>
+                        </div>
+                        <div class="meta-box">
+                        <div class="meta-item"><a href="#">作者:${author}</a></div>
+                        <div class="meta-item"><a href="#">出版商:${publisher}</a></div>
+                        <div class="meta-item"><a href="#">出版时间:${public_time}</a></div>
+                        <div class="meta-item"><a href="#">剩余${remain}本</a></div>
+                        <hr>
+                        </div>
+                    </section>
+                    <section class="arti-body">
+                        <span class="opening">
+                            ${introduce}
+                        </span>
+                        <div class="readmore">
+                            <p><b>书籍当前没有库存，点击按钮将在有库存时发送邮箱通知</b></p>
+                            <button class="button-box reserve" data-id=${id}>到货提醒</button>
+                        </div>
+                    </section>
+                    <section class="tags">
+                    </section>
+                </article>
+            `
+        }
+        return tmp
+    }
+
+    var get_all_book = function () {
+        ajax("GET", "{{url_for('book.get_all_book')}}", null, put_all_book)
+    }
+
+    var option_template = function (id, type) {
+        var tmp = `<option value = ${type} data-id=${id}>${type}</option>`
+        return tmp
+    }
+
+    var put_all_book_type = function (resp) {
+        resp = JSON.parse(resp)
+        var select = get("#id-select-type")
+        for(var i=0; i<resp.length;i++){
+            var tmp = option_template(resp[i]["id"], resp[i]["type"])
+            select.insertAdjacentHTML("beforeEnd", tmp)
+        }
+        put_book_by_type()
+
+    }
+
+    var clean_all_book = function () {
+        var items = get_all(".center")
+        for (var item of items){
+            item.remove()
+        }
+    }
+
+    var put_all_book = function (resp) {
+        resp = JSON.parse(resp)
+        clean_all_book()
+        var articles = get(".articles")
+        for(var i=0; i<resp.length;i++){
+            var target = resp[i]
+            var tmp = get_template(target["bookname"], target["introduce"], target["id"], target["remain"], target["ISBN"], target["author"], target["publisher"], target["public_time"])
+            articles.insertAdjacentHTML("beforeEnd", tmp)
+        }
+    }
+
+    var get_books_by_type = function (type) {
+        var data = {
+            type:type,
+        }
+        ajax("POST", "{{url_for('book.get_books_by_type')}}", data, put_all_book)
+    }
+
+    var get_book_types = function () {
+         ajax("GET", "{{url_for('book.get_all_book_type')}}", null, put_all_book_type)
+    }
+
+    var sending_callback = function (resp) {
+        window.location.href = resp
+    }
+    //fromCharCode
+
+    var to_lower = function (str) {
+        var res = ""
+        for(var i=0; i<str.length; i++){
+            var tmp = str.charCodeAt(i)
+            if (tmp>= 65 && tmp<=90){
+                tmp += 32
+            }
+            res += String.fromCharCode(tmp)
+        }
+        return res
+    }
+
+    var valid = function (ele, bookname, author, isbn) {
+        var d = {
+            bookname:bookname,
+            author:author,
+            isbn:isbn,
+        }
+        for (var key in d){
+           if ( to_lower(ele.dataset[key]).search(d[key]) < 0){
+               return false
+           }
+        }
+        return true
+    }
+
+    var search = function (bookname, author, isbn) {
+        bookname = to_lower(bookname)
+        author = to_lower(author)
+        isbn = to_lower(isbn)
+        var all = get_all(".center")
+        for (var ele of all) {
+            if (!valid(ele, bookname, author, isbn)){
+                ele.classList.add("not_show")
+            }
+            else{
+                ele.classList.remove("not_show")
+            }
+        }
+    }
+// <!--<div>-->
+//          <!--<input id="bookname" type="text" class="form-control searcher" placeholder="输入寻找的书名" aria-describedby="basic-addon1"><br>-->
+//      <!--</div>-->
+//      <!--<div>-->
+//          <!--<input id="author" type="text" class="form-control searcher" placeholder="输入作者" aria-describedby="basic-addon1"><br>-->
+//      <!--</div>-->
+//      <!--<div>-->
+//          <!--<input id="ISBN" type="text" class="form-control searcher" placeholder="输入ISBN" aria-describedby="basic-addon1"><br>-->
+//      <!--</div>-->
+
+
+    var on_searcher_input = function (event) {
+        var bookname = get("#bookname").value
+        var author = get("#author").value
+        var isbn = get("#ISBN").value
+        search(bookname, author, isbn)
+
+        // switch (id) {
+        //     case 'author':
+        //         break
+        //     case 'bookname':
+        //         break
+        //     case 'ISBN':
+        //         break
+        //     default:
+        //         break
+        // }
+        // target = to_lower(target)
+        // var eles = get_all(".center")
+        // for (var i=0; i<eles.length;i++){
+        //     log(to_lower(eles[i].dataset.bookname))
+        //     log(target)
+        //     log(to_lower(eles[i].dataset.bookname).search(target))
+        //    if (to_lower(eles[i].dataset.bookname).search(target) < 0){
+        //        eles[i].classList.add("not_show")
+        //    }
+        //    else{
+        //        eles[i].classList.remove("not_show")
+        //    }
+        // }
+    }
+
+    var click_on_but = function (event) {
+            var target = event.target
+            if (target.classList.contains("button-box")){
+                if (target.classList.contains("borrow")){
+                    var article = target.parentElement.parentElement.parentElement
+                    var data = {
+                        book_name: article.querySelector(".title").innerHTML,
+                        book_id: target.dataset.id,
+                    }
+                    ajax("POST", '{{url_for("order.get_comfirm")}}', data, sending_callback)
+                }
+                else if(target.classList.contains("reserve")){
+                    var data = {
+                        book_id: target.dataset.id,
+                    }
+                    ajax("POST", '{{url_for("reserve_book.add_reserve")}}', data, sending_callback)
+                }
+            }
+        }
+
+
+    var bind_event = function () {
+        var article = get(".articles")
+        var searchers = get_all(".searcher")
+        var select = get("#id-select-type")
+        article.addEventListener("click", click_on_but)
+        select.addEventListener("change", put_book_by_type)
+        for(var searcher of searchers){
+            searcher.addEventListener("input", on_searcher_input)
+        }
+    }
+
+
+    var put_book_by_type = function () {
+        var select = get("#id-select-type")
+        var option = select.options[select.selectedIndex]
+        if (option != null)
+        {
+            get_books_by_type(option.value)
+        }
+    }
+</script>
+<script>
+    get_book_types()
+    bind_event()
+</script>
+
+</body>
+</html>

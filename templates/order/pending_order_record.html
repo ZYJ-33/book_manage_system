@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>待管理员确认的订单</title>
+    <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+ <nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href={{url_for("index.index")}}>图书管理系统</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+          <li><a href={{url_for("admin.add_book")}} role="button"></a></li>
+          <li><a href={{url_for("order.get_pending_order_record_page")}} role="button">查看申请中的记录</a></li>
+          <li><a  href={{url_for("order.get_begin_order_record_page")}} role="button">查看已经开始的记录</a></li>
+          <li><a  href={{url_for("order.get_end_order_record_page")}} role="button">查看已经完成的记录</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href={{url_for("book.get_books_template")}} role="button">查看所有书籍</a></li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+<div class="container">
+        <table class="table table-bordered table-hover table-condensed" id="id-table-result">
+        <thead class="thead-light" id="id-table-head">
+        <tr>
+
+          <th>书名</th>
+            <th>订单状态</th>
+            <th>开始日期</th>
+            <th>还书日期</th>
+            <th>#</th>
+        </tr>
+      </thead>
+        <tbody id="id-table-body">
+
+      </tbody>
+    </table>
+    </div>
+<script>
+    var ajax = function(method, path, data, reseponseCallback) {
+            var r = new XMLHttpRequest()
+            // 设置请求方法和请求地址
+            r.open(method, path, true)
+            // 设置发送的数据的格式为 application/json
+            // 这个不是必须的
+            r.setRequestHeader('Content-Type', 'application/json')
+            // 注册响应函数
+            r.onreadystatechange = function() {
+                if(r.readyState === 4) {
+                    // r.response 存的就是服务器发过来的放在 HTTP BODY 中的数据
+                    reseponseCallback(r.response)
+                }
+            }
+            // 把数据转换为 json 格式字符串
+            data = JSON.stringify(data)
+            // 发送请求
+            r.send(data)
+        }
+
+        var log = function() {
+            console.log.apply(console, arguments)
+        }
+
+        var get = function (str) {
+            return document.querySelector(str)
+        }
+
+        var tbody_template = function (bookname, status,start_date,end_date, id) {
+            var tmp = `
+                    <tr id=target-${id}>
+                      <td>${bookname}</td>
+                      <td>${status}</td>
+                      <td>${start_date}</td>
+                      <td>${end_date}</td>
+
+                      <td>
+                            <button type="button" class="btn agree_but btn-success" data-id=${id}>取消</button>
+                      </td>
+
+                    </tr>
+            `
+            return tmp
+        }
+
+    var put_all_order = function (resp) {
+        log(resp)
+        resp = JSON.parse(resp)
+        var table_body = get("#id-table-body")
+        for(var i=0; i<resp.length;i++){
+            var target = resp[i]
+            var tmp = tbody_template(target["bookname"], target["status"], target["start_date"],target["end_date"], target["id"])
+            table_body.insertAdjacentHTML("beforeEnd", tmp)
+        }
+    }
+
+    var action_on_order_callback = function (resp) {
+        window.location.href = resp
+    }
+
+    var action_on_order = function (event) {
+        var target = event.target
+        if (target.classList.contains("btn")){
+            var data = {
+                id:target.dataset.id,
+            }
+            ajax("POST", "{{url_for('order.cancel_pending_order')}}", data, action_on_order_callback)
+        }
+    }
+
+    var bind_event = function() {
+        var table_body = get("#id-table-body")
+        table_body.addEventListener("click", action_on_order)
+    }
+
+    var put_orders_inplace = function () {
+        ajax("POST", '{{url_for("order.all_pending_orders")}}', null, put_all_order)
+    }
+</script>
+<script>
+    put_orders_inplace()
+    bind_event()
+</script>
+</body>
+</html>
