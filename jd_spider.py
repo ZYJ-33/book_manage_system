@@ -19,6 +19,7 @@ def parse_index(html):
 
 def book_info_iterator(keyword):
     url = 'https://search.jd.com/Search'
+    keyword = keyword.encode("gbk")
     params = dict(
         keyword=keyword,
     )
