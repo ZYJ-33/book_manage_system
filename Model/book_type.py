@@ -25,6 +25,16 @@ class book_Type(model):
         conn.commit()
         return
 
+    def get_self_id(self):
+        sql = '''
+             SELECT id
+             FROM book_type
+             WHERE type = %s
+         '''
+        conn, cursor = self.get_cursor()
+        cursor.execute(sql, self.type)
+        return cursor.fetchall()[0]["id"]
+
     def add_book(self, type_id):
         iterator = book_info_iterator(self.type)
         for info in iterator:
